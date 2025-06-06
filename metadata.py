@@ -10,7 +10,6 @@ def timestamp(item):
 row_metadata = {'code': str, 'codein': str, 'name': str, 'high': float, 'low': float, 'varBid': float, 'pctChange': float, 'bid': float, 'ask': float, 'timestamp': timestamp, 'create_date': created_date}
 
 table_metadata = StructType([
-    StructField("pair", StringType(), True),
     StructField("code", StringType(), True),
     StructField("codein", StringType(), True),
     StructField("name", StringType(), True),

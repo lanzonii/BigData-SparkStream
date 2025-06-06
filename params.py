@@ -7,4 +7,5 @@ POSTGRES_CONFIG = {
     "url": "jdbc:postgresql://database-cultiville.e.aivencloud.com:12670/defaultdb?sslmode=require"
 }
 
-url = 'https://economia.awesomeapi.com.br/last/'
+# URL base da API
+url = 'https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL'

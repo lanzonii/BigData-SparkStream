@@ -13,36 +13,28 @@ from params import *
 from metadata import *
 
 # Função para pegar dados da API
-def fetch_api_data(url):
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        print("Erro ao acessar a API:", e)
-        return None
+def fetch_api_data(money):
+    response = requests.get(f'https://economia.awesomeapi.com.br/json/daily/{money}-BRL/15')
+    data = response.json()
+    return data
 
 # Função de processamento de dados
 def process_batch(df, epoch_id):
     try:
-        # Pegando os dados da API
-        raw_data = fetch_api_data(url)
-        items = list(raw_data.values())
-        print(items)
-        # Aplicando a função de tratamento em todos os dados
-        rows = []
-        for item in items:
-            try:
-                row = [func(item[key]) for key, func in row_metadata.items()]
-                rows.append(row)
-            except Exception as e:
-                print(f"Erro no item: {item} -> {e}")
-                
-        # Salvando no banco de dados
-        spark = SparkSession.builder.config("spark.jars", "./postgresql-42.2.18.jar").getOrCreate()
-        new_df = spark.createDataFrame(rows, table_metadata)
-        new_df.write.format("jdbc").options(**POSTGRES_CONFIG).mode("append").save()
-        print(f"Dados inseridos: {rows[0][-2]}")  # Log do timestamp
+        # For para executar 1 vez para cada moeda
+        for i in ['EUR', 'USD']:
+            # Pegando os dados da API
+            raw_data = fetch_api_data(i)
+            items = raw_data.items()
+            
+            # Aplicando a função de tratamento em todos os dados
+            rows = [[func(item[key]) for key, func in row_metadata.items()] for item in items]
+        
+            # Salvando no banco de dados
+            spark = SparkSession.builder.config("spark.jars", "./postgresql-42.2.18.jar").getOrCreate()
+            new_df = spark.createDataFrame(rows, table_metadata)
+            new_df.write.format("jdbc").options(**POSTGRES_CONFIG).mode("append").save()
+            print(f"Dados inseridos: {rows[0][-2]}")  # Log do timestamp
  
     except Exception as e:
         print(f"Erro no processamento: {str(e)}")
@@ -52,7 +44,7 @@ if __name__ == "__main__":
     # Sessão do Spark
     spark = SparkSession.builder \
         .appName("EuroDollarDolar") \
-        .config("spark.jars", "./postgresql-42.2.18.jar") \
+        .config("spark.jars.packages", "org.postgresql:postgresql:42.2.18") \
         .getOrCreate()
     
     # Criação de um DataFrame base para o Stream
